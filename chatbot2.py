@@ -1,22 +1,22 @@
 from openai import OpenAI
 import tiktoken
+import logging
+from datetime import datetime
+
+log = logging.getLogger("chatbot_token_count")
+
+logging.basicConfig(filename = "chatbot_token_count.log", level = logging.INFO)
 
 client = OpenAI()
 
-# accepts a preferred model and a list of messages
-# makes chat completions API call
-# returns the response message content
 def get_api_chat_response_message(model, messages):
-    # make the API call
     api_response = client.chat.completions.create(
         model = model,
         messages = messages
     )
 
-    # extract the response text
     response_content = api_response.choices[0].message.content
 
-    # return the response text
     return response_content
 
 model = "gpt-3.5-turbo"
@@ -30,6 +30,9 @@ chat_history = []
 
 user_input = ""
 
+total_input_tokens = 0
+total_output_tokens = 0
+
 while True:
     if (user_input == ""):
         user_input = input("Chatbot: Hello there, I'm your helpful chatbot! Type exit to end our chat. What's your name? ")
@@ -41,14 +44,21 @@ while True:
     else:
         user_input = input("You: ")
     if user_input.lower() == "exit":
+	log.info({
+		'total input tokens': total_input_tokens,
+		'total output tokens': total_output_tokens,
+		'total tokens': total_input_tokens + total_output_tokens,
+		'date': datetime.now()
+	})
         exit()
 	
-    token_count = len(encoding.encode(user_input))
+    token_input = len(encoding.encode(user_input))
+	total_input_tokens += token_input
 	# print(token_count)
-	if (token_count > token_input_limit):
+	if (token_input > token_input_limit):
 	        print("Your prompt is too long. Please try again.")
 	        continue
-	
+
     chat_history.append({
         "role": "user",
         "content": user_input
@@ -56,9 +66,14 @@ while True:
 
     response = get_api_chat_response_message(model, chat_history)
 
+	token_output = len(encoding.encode(response))
+	total_output_tokens += token_output
+
     print("Chatbot: ", response)
 
     chat_history.append({
         "role": "assistant",
         "content": response
     })
+
+
