@@ -1,4 +1,5 @@
 from openai import OpenAI
+import tiktoken
 
 client = OpenAI()
 
@@ -20,6 +21,11 @@ def get_api_chat_response_message(model, messages):
 
 model = "gpt-3.5-turbo"
 
+encoding = tiktoken.encoding_for_model(model)
+token_input_limit = 12289
+
+# print(encoding)
+
 chat_history = []
 
 user_input = ""
@@ -27,7 +33,6 @@ user_input = ""
 while True:
     if (user_input == ""):
         user_input = input("Chatbot: Hello there, I'm your helpful chatbot! Type exit to end our chat. What's your name? ")
-        # The model may not recognize common words like "Tauri", "Mercedes", or "Joey" as a user's name, so you can add the user_input as a user_name to the chat_history
         user_name = f"User name is {user_input}"
         chat_history.append({
           "role": "user",
@@ -37,6 +42,12 @@ while True:
         user_input = input("You: ")
     if user_input.lower() == "exit":
         exit()
+	
+    token_count = len(encoding.encode(user_input))
+	# print(token_count)
+	if (token_count > token_input_limit):
+	        print("Your prompt is too long. Please try again.")
+	        continue
 	
     chat_history.append({
         "role": "user",
